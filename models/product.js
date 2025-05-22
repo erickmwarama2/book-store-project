@@ -12,7 +12,12 @@ const getProductsFromFile = (cb) => {
       return;
     }
 
-    cb(JSON.parse(fileContents));
+    try {
+      cb(JSON.parse(fileContents));
+    } catch (error) {
+      console.log(error.message);
+      cb([]);
+    }
   });
 };
 
