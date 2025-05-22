@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "server": "nodemon app.js --watch"
+    "server": "nodemon --ignore '*.json' app.js"
   },
   "keywords": [],
   "author": "",

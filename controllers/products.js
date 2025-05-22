@@ -17,13 +17,13 @@ exports.postAddProduct = (req, res, next) => {
 
 exports.getProducts = (req, res, next) => {
   // res.sendFile(path.join(rootDir, "views", "shop.html"));
-  const products = Product.fetchAll();
-
-  res.render("shop", {
-    products,
-    docTitle: "Shop",
-    path: "/",
-    hasProducts: products.length > 0,
-    activeShop: true,
+  Product.fetchAll((products) => {
+    res.render("shop", {
+      products,
+      docTitle: "Shop",
+      path: "/",
+      hasProducts: products.length > 0,
+      activeShop: true,
+    });
   });
 };
