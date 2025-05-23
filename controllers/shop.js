@@ -31,6 +31,13 @@ exports.getCart = (req, res, next) => {
   });
 };
 
+exports.getOrders = (req, res, next) => {
+  res.render("shop/cart", {
+    activeOrders: true,
+    pageTitle: "Your Orders",
+  });
+};
+
 exports.getCheckout = (req, res, next) => {
   res.render("shop/checkout", {
     activeCheckout: true,
