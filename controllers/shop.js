@@ -37,21 +37,45 @@ exports.getIndex = (req, res, next) => {
 };
 
 exports.getCart = (req, res, next) => {
-  res.render("shop/cart", {
-    activeCart: true,
-    pageTitle: "Your Cart",
+  Cart.getCart((cart) => {
+    Product.fetchAll((products) => {
+      const cartProducts = [];
+      for (product of products) {
+        const cartProductData = cart.products.find(
+          (prod) => prod.id === product.id
+        );
+        if (cartProductData) {
+          cartProducts.push({ productData: product, qty: cartProductData.qty });
+        }
+      }
+
+      res.render("shop/cart", {
+        activeCart: true,
+        pageTitle: "Your Cart",
+        products: cartProducts,
+        hasProducts: cartProducts.length > 0,
+      });
+    });
   });
 };
 
 exports.postCart = (req, res, next) => {
   const productId = req.body.productId;
-  console.log(productId);
+  // console.log(productId);
 
   Product.findById(productId, (product) => {
     Cart.addProduct(productId, product.price);
   });
 
   res.redirect("/products");
+};
+
+exports.postCartDeleteItem = (req, res, next) => {
+  const productId = req.body.productId;
+  Product.findById(productId, (product) => {
+    Cart.deleteProduct(productId, product.price);
+    res.redirect("/cart");
+  });
 };
 
 exports.getOrders = (req, res, next) => {
