@@ -1,3 +1,4 @@
+const Cart = require("../models/cart");
 const Product = require("../models/product");
 
 exports.getProducts = (req, res, next) => {
@@ -7,7 +8,18 @@ exports.getProducts = (req, res, next) => {
       docTitle: "Products",
       path: "/",
       hasProducts: products.length > 0,
-      activeProducts: true,
+      activeShopProducts: true,
+    });
+  });
+};
+
+exports.getProduct = (req, res, next) => {
+  const productId = req.params.productId;
+  Product.findById(productId, (product) => {
+    res.render("shop/product-detail", {
+      product,
+      pageTitle: "Product details",
+      activeShopProduct: true,
     });
   });
 };
@@ -29,6 +41,17 @@ exports.getCart = (req, res, next) => {
     activeCart: true,
     pageTitle: "Your Cart",
   });
+};
+
+exports.postCart = (req, res, next) => {
+  const productId = req.body.productId;
+  console.log(productId);
+
+  Product.findById(productId, (product) => {
+    Cart.addProduct(productId, product.price);
+  });
+
+  res.redirect("/products");
 };
 
 exports.getOrders = (req, res, next) => {
