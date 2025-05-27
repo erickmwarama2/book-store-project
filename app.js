@@ -5,6 +5,7 @@ const bodyParser = require("body-parser");
 const expressHbs = require("express-handlebars");
 
 const rootDir = require("./utils/path");
+const db = require("./utils/db");
 
 const app = express();
 
