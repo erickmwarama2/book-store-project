@@ -5,7 +5,7 @@ const bodyParser = require("body-parser");
 const expressHbs = require("express-handlebars");
 
 const rootDir = require("./utils/path");
-const db = require("./utils/db");
+const sequelize = require("./utils/db");
 
 const app = express();
 
@@ -33,6 +33,12 @@ app.use(shopRoutes);
 
 app.use(errorController.getNotFound);
 
-app.listen(3000, () => {
-  console.log("server listening on port 3000");
-});
+sequelize
+  .sync({ logging: true })
+  .then((result) => {
+    // console.log(result);
+    app.listen(3000, () => {
+      console.log("server listening on port 3000");
+    });
+  })
+  .catch((err) => console.log(err.message));
