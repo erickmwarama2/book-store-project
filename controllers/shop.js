@@ -188,23 +188,18 @@ exports.postCartDeleteItem = (req, res, next) => {
 
 exports.getOrders = async (req, res, next) => {
   try {
-    const orders = await req.user.getOrders();
+    const orders = await req.user.getOrders({ include: ["products"] });
     // console.log(orders);
-    const orderValues = await Promise.all(
-      orders.map(async (order) => {
-        const obj = order.dataValues;
-        const products = await order.getProducts();
-        const productValues = products.map((product) => {
-          let productValue = product.dataValues;
-          productValue.quantity = product.orderItem.dataValues.quantity;
-          return productValue;
-        });
-        obj.products = productValues;
-        return obj;
-      })
-    );
+    const orderValues = orders.map((order) => {
+      const obj = order.dataValues;
+      obj.products = order.products.map((product) => {
+        let prodObj = product.dataValues;
+        prodObj.quantity = product.orderItem.quantity;
+        return prodObj;
+      });
+      return obj;
+    });
 
-    // console.log(orderValues);
     res.render("shop/orders", {
       activeOrders: true,
       pageTitle: "Your Orders",
