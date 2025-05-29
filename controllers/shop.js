@@ -2,6 +2,7 @@ const Cart = require("../models/cart");
 const Product = require("../models/product");
 // const ProductModel = require("../models/ProductModel");
 const ProductModel = require("../models/orm/Product");
+const CartItem = require("../models/orm/CartItem");
 
 exports.getProducts = (req, res, next) => {
   // ProductModel.fetchAll()
@@ -71,52 +72,148 @@ exports.getIndex = (req, res, next) => {
 };
 
 exports.getCart = (req, res, next) => {
-  Cart.getCart((cart) => {
-    Product.fetchAll((products) => {
-      const cartProducts = [];
-      for (product of products) {
-        const cartProductData = cart.products.find(
-          (prod) => prod.id === product.id
-        );
-        if (cartProductData) {
-          cartProducts.push({ productData: product, qty: cartProductData.qty });
-        }
-      }
+  // Cart.getCart((cart) => {
+  //   Product.fetchAll((products) => {
+  //     const cartProducts = [];
+  //     for (product of products) {
+  //       const cartProductData = cart.products.find(
+  //         (prod) => prod.id === product.id
+  //       );
+  //       if (cartProductData) {
+  //         cartProducts.push({ productData: product, qty: cartProductData.qty });
+  //       }
+  //     }
 
-      res.render("shop/cart", {
-        activeCart: true,
-        pageTitle: "Your Cart",
-        products: cartProducts,
-        hasProducts: cartProducts.length > 0,
+  //     res.render("shop/cart", {
+  //       activeCart: true,
+  //       pageTitle: "Your Cart",
+  //       products: cartProducts,
+  //       hasProducts: cartProducts.length > 0,
+  //     });
+  //   });
+  // });
+
+  req.user
+    .getCart()
+    .then((cart) => {
+      cart.getProducts().then((products) => {
+        // console.log(products);
+        const cartProducts = [];
+        for (product of products) {
+          // console.log(product);
+          // console.log(product.cartItems.dataValues);
+          cartProducts.push({
+            productData: product.dataValues,
+            qty: product.cartItems.dataValues.quantity,
+          });
+        }
+
+        res.render("shop/cart", {
+          activeCart: true,
+          pageTitle: "Your Cart",
+          products: cartProducts,
+          hasProducts: cartProducts.length > 0,
+        });
       });
-    });
-  });
+    })
+    .catch((err) => console.log(err.message));
 };
 
 exports.postCart = (req, res, next) => {
   const productId = req.body.productId;
   // console.log(productId);
 
-  Product.findById(productId, (product) => {
-    Cart.addProduct(productId, product.price);
-  });
-
-  res.redirect("/products");
+  // Product.findById(productId, (product) => {
+  //   Cart.addProduct(productId, product.price);
+  // });
+  let fetchedCart;
+  req.user
+    .getCart()
+    .then((cart) => {
+      fetchedCart = cart;
+      return cart.getProducts({ where: { id: productId } });
+    })
+    .then((products) => {
+      console.log(products);
+      let product;
+      if (products.length > 0) {
+        product = products[0];
+      }
+      let newQuantity = 1;
+      if (product) {
+        newQuantity += product.cartItems.quantity;
+      }
+      return ProductModel.findByPk(productId)
+        .then((product) => {
+          return fetchedCart.addProduct(product, {
+            through: { quantity: newQuantity },
+          });
+        })
+        .catch((err) => console.log(err.message));
+    })
+    .then(() => res.redirect("/products"))
+    .catch((err) => console.log(err.message));
 };
 
 exports.postCartDeleteItem = (req, res, next) => {
   const productId = req.body.productId;
-  Product.findById(productId, (product) => {
-    Cart.deleteProduct(productId, product.price);
-    res.redirect("/cart");
-  });
+  // Product.findById(productId, (product) => {
+  //   Cart.deleteProduct(productId, product.price);
+  //   res.redirect("/cart");
+  // });
+
+  req.user
+    .getCart()
+    .then((cart) => {
+      if (!cart) {
+        return Promise.resolve([]);
+      }
+      return cart.getProducts({ where: { id: productId } });
+    })
+    .then((products) => {
+      let product = null;
+      if (products.length > 0) {
+        product = products[0];
+      }
+
+      if (!product) {
+        return Promise.resolve(null);
+      }
+
+      return product.cartItems.destroy();
+    })
+    .then(() => res.redirect("/cart"))
+    .catch((err) => console.log(err.message));
 };
 
-exports.getOrders = (req, res, next) => {
-  res.render("shop/cart", {
-    activeOrders: true,
-    pageTitle: "Your Orders",
-  });
+exports.getOrders = async (req, res, next) => {
+  try {
+    const orders = await req.user.getOrders();
+    // console.log(orders);
+    const orderValues = await Promise.all(
+      orders.map(async (order) => {
+        const obj = order.dataValues;
+        const products = await order.getProducts();
+        const productValues = products.map((product) => {
+          let productValue = product.dataValues;
+          productValue.quantity = product.orderItem.dataValues.quantity;
+          return productValue;
+        });
+        obj.products = productValues;
+        return obj;
+      })
+    );
+
+    // console.log(orderValues);
+    res.render("shop/orders", {
+      activeOrders: true,
+      pageTitle: "Your Orders",
+      orders: orderValues,
+      hasOrders: orders.length > 0,
+    });
+  } catch (error) {
+    console.log(error.message);
+  }
 };
 
 exports.getCheckout = (req, res, next) => {
@@ -124,4 +221,23 @@ exports.getCheckout = (req, res, next) => {
     activeCheckout: true,
     pageTitle: "Checkout",
   });
+};
+
+exports.postOrder = async (req, res, next) => {
+  try {
+    const cart = await req.user.getCart();
+    const products = await cart.getProducts();
+    const order = await req.user.createOrder();
+    await order.addProducts(
+      products.map((product) => {
+        product.orderItem = { quantity: product.cartItems.quantity };
+        return product;
+      })
+    );
+    await cart.setProducts(null);
+    // console.log(products);
+    res.redirect("/orders");
+  } catch (error) {
+    console.log(error.message);
+  }
 };
