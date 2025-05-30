@@ -1,6 +1,7 @@
-const Product = require("../models/product");
-const ProductModel = require("../models/orm/Product");
+// const Product = require("../models/product");
+// const ProductModel = require("../models/orm/Product");
 // const ProductModel = require("../models/ProductModel");
+const Product = require("../models/mongo/Product");
 
 exports.getAddProduct = (req, res, next) => {
   res.render("admin/edit-product", {
@@ -27,14 +28,14 @@ exports.getEditProduct = (req, res, next) => {
   // const productId = req.params.productId;
   // req.user
   //   .getProducts({ where: { id: productId } })
-  ProductModel.findByPk(productId)
+  Product.findById(productId)
     .then((product) => {
       res.render("admin/edit-product", {
         pageTitle: "Edit Product",
         path: "/admin/edit-product",
         activeProduct: true,
         editing: editMode == "true",
-        product: product.dataValues,
+        product,
       });
     })
     .catch((err) => console.log(err.message));
@@ -42,17 +43,19 @@ exports.getEditProduct = (req, res, next) => {
 
 exports.postAddProduct = async (req, res, next) => {
   const { title, imageUrl, description, price } = req.body;
-  const product = new ProductModel(title, imageUrl, description, price);
+  // const product = new ProductModel(title, imageUrl, description, price);
   // product
   //   .save()
   //   .then(() => res.redirect("/admin/admin-products"))
   //   .catch((err) => console.log(err.message));
-  await req.user.createProduct({
-    title,
-    description,
-    imageUrl,
-    price,
-  });
+
+  // await req.user.createProduct({
+  //   title,
+  //   description,
+  //   imageUrl,
+  //   price,
+  // });
+
   // await ProductModel.create({
   //   title,
   //   description,
@@ -60,6 +63,9 @@ exports.postAddProduct = async (req, res, next) => {
   //   price,
   //   userId: req.user.id,
   // });
+
+  const product = new Product(title, price, description, imageUrl);
+  product.save();
   res.redirect("/admin/admin-products");
 };
 
@@ -67,19 +73,26 @@ exports.postEditProduct = (req, res, next) => {
   const { title, imageUrl, description, price, productId } = req.body;
   // const product = new Product(title, imageUrl, description, price, productId);
   // product.save();
-  ProductModel.findByPk(productId)
-    .then((product) => {
-      product.title = title;
-      product.imageUrl = imageUrl;
-      product.description = description;
-      product.price = price;
-
-      return product.save();
-    })
+  const product = new Product(title, price, description, imageUrl, productId);
+  product
+    .save()
     .then(() => {
       res.redirect("/admin/admin-products");
     })
     .catch((err) => console.log(err.message));
+  // Product.findById(productId)
+  //   .then((productData) => {
+  //     product.title = title;
+  //     product.imageUrl = imageUrl;
+  //     product.description = description;
+  //     product.price = price;
+
+  //     return product.save();
+  //   })
+  //   .then(() => {
+  //     res.redirect("/admin/admin-products");
+  //   })
+  //   .catch((err) => console.log(err.message));
 };
 
 exports.getProducts = (req, res, next) => {
@@ -95,15 +108,28 @@ exports.getProducts = (req, res, next) => {
 
   // ProductModel.findAll()
   // console.log(req.user);
-  req.user
-    .getProducts()
+  // req.user
+  //   .getProducts()
+  //   .then((products) => {
+  //     const productValues = products.map((product) => product.dataValues);
+  //     res.render("admin/product-list", {
+  //       products: productValues,
+  //       pageTitle: "Admin Products",
+  //       path: "/admin/product-list",
+  //       hasProducts: productValues.length > 0,
+  //       activeIndex: true,
+  //     });
+  //   })
+  //   .catch((err) => console.log(err.message));
+
+  Product.fetchAll()
     .then((products) => {
-      const productValues = products.map((product) => product.dataValues);
+      // console.log(products);
       res.render("admin/product-list", {
-        products: productValues,
+        products,
         pageTitle: "Admin Products",
         path: "/admin/product-list",
-        hasProducts: productValues.length > 0,
+        hasProducts: products.length > 0,
         activeIndex: true,
       });
     })

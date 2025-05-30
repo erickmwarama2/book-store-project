@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "server": "nodemon --ignore '*.json' app.js"
+    "server": "nodemon --ignore '*.json' server.js"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +15,7 @@
     "ejs": "^3.1.10",
     "express": "^5.1.0",
     "express-handlebars": "^8.0.3",
+    "mongodb": "^6.16.0",
     "mysql2": "^3.14.1",
     "pug": "^3.0.3",
     "sequelize": "^6.37.7"

@@ -19,7 +19,7 @@
   </div>
 
   {{#if editing}}
-  <input type="hidden" value="{{product.id}}" name="productId" />
+  <input type="hidden" value="{{product._id}}" name="productId" />
   {{/if}}
 
   <button type="submit">{{#if editing}} Update {{else}} Add{{/if}}
