@@ -5,7 +5,7 @@ let _db;
 
 const mongoConnect = (cb) => {
   MongoClient.connect(
-    "mongodb+srv://pitchtechnologieskenya:fodqL9X9FipsYqgB@node-db.uoktqre.mongodb.net/?retryWrites=true&w=majority&appName=node-db"
+    `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@node-db.uoktqre.mongodb.net/?retryWrites=true&w=majority&appName=node-db`
   )
     .then((client) => {
       console.log("connected to db");
